@@ -7,11 +7,11 @@ class TelegramBot(BotBase):
     def __init__(self, bot_token, user_id) -> None:
         self.bot_token = bot_token
         self.user_id = user_id
-        self.support_markdown = True
+        self.support_markdown = False
 
     async def send_message(self, message: str) -> bool:
-        """Send message via Telegram"""
-        api_url = f"https://api.telegram.org/bot{self.bot_token}/sendMessage"
+        """Send message via fwalert"""
+        api_url = f"https://fwalert.com/{self.bot_token}"
         body = {"chat_id": self.user_id, "text": message, "parse_mode": "HTML"}
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.post(api_url, json=body) as response:

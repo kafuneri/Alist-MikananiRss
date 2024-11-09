@@ -12,7 +12,7 @@ class TelegramBot(BotBase):
     async def send_message(self, message: str) -> bool:
         """Send message via fwalert"""
         api_url = f"https://fwalert.com/{self.bot_token}"
-        body = {"chat_id": self.user_id, "text": message, "parse_mode": "HTML"}
+        body = {"chat_id": self.user_id, "text": message}
         async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.post(api_url, json=body) as response:
                 response.raise_for_status()

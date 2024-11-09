@@ -16,11 +16,11 @@ class NotificationMsg:
 
         msg = "你订阅的番剧"
         for name, titles in self._update_info.items():
-            msg += f"<b>[{name}]</b>, "
+            msg += f"[{name}], "
         msg = msg.rstrip(", ") + " 更新啦：\n"
 
         for name, titles in self._update_info.items():
-            msg += f"<b>[{name}]</b>:\n"
+            msg += f"[{name}]:\n"
             for title in titles:
                 msg += f"{title}\n"
             msg += "\n"

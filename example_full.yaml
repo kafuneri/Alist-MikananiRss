@@ -30,14 +30,22 @@ notification:
     user_id: your_id
   pushplus: 
     token: xxxxx
+    channel: channel
   interval_time: 300
 
 rename: 
   chatgpt: 
     api_key: sk-xxx
     base_url: https://example.com/v1
-    model: gpt-3.5-turbo
-  rename_format: "{name} S{season:02d}E{episode:02d}.{ext}"
+    model: gpt-4o-mini
+  rename_format: "{name} S{season:02d}E{episode:02d}"
+  remap: 
+    enable: trues
+    cfg_path: "remap.yaml"
+
+bot_assistant:
+  telegram:
+    bot_token: your_token
 
 dev:
   log_level: INFO

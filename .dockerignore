@@ -6,7 +6,6 @@ dist/
 wheels/
 *.egg-info
 .coverage
-.vscode/
 
 # venv
 .venv
@@ -19,3 +18,10 @@ remap.yaml
 
 # debug file
 *.ipynb
+
+# project files
+.github/
+imgs/
+tests/
+.gitignore
+*.yaml

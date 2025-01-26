@@ -1,74 +1,50 @@
 import pytest
-import yaml
-from alist_mikananirss.common.config_loader import ConfigLoader
+
+from alist_mikananirss.alist.api import AlistDownloaderType
+from alist_mikananirss.common.config import ConfigManager
 
 
-@pytest.fixture
-def sample_config():
-    return {
-        "common": {
-            "interval_time": 300,
-            "proxies": {
-                "http": "https://127.0.0.1:7890",
-                "https": "https://127.0.0.1:7890",
-            },
-        },
-        "alist": {
-            "base_url": "https://www.example.com",
-            "token": "alist-xxx",
-            "downloader": "aria2",
-            "download_path": "Onedrive/Anime",
-        },
-        "mikan": {
-            "subscribe_url": [
-                "https://mikanani.me/RSS/MyBangumi?token=xxx",
-                "https://mikanani.me/RSS/rss2",
-            ],
-            "filters": ["1080p", "非合集"],
-        },
-    }
+@pytest.fixture(autouse=True)
+def clear_manager():
+    ConfigManager._instances.pop(ConfigManager, None)
 
 
-@pytest.fixture
-def config_file(tmp_path, sample_config):
-    config_file = tmp_path / "test_config.yaml"
-    with open(config_file, "w") as f:
-        yaml.dump(sample_config, f)
-    return config_file
+def test_load_config():
+    config_path = "tests/common/test_config_valid.yaml"
+    cfg = ConfigManager(config_path).get_config()
+    assert cfg.common_interval_time == 300
+    assert cfg.common_proxies is None
+
+    assert cfg.alist_base_url == "http://127.0.0.1:5244"
+    assert cfg.alist_token == "your_token"
+    assert cfg.alist_downloader == AlistDownloaderType.ARIA
+    assert cfg.alist_download_path == "Onedrive/Anime"
+
+    assert isinstance(cfg.mikan_subscribe_url, list)
+    assert all(
+        filter_name in cfg.mikan_regex_pattern for filter_name in cfg.mikan_filters
+    )
+
+    assert cfg.notification_enable is True
+    assert cfg.notification_telegram_enable is True
+    assert cfg.notification_pushplus_enable is False
+    assert cfg.notification_interval_time == 300
+
+    assert cfg.rename_enable is True
+    assert cfg.rename_chatgpt_api_key == "sk-xxx"
+    assert cfg.rename_chatgpt_base_url == "https://example.com/v1"
+    assert cfg.rename_chatgpt_model == "gpt-4o-mini"
+    assert cfg.rename_format == "{name} S{season:02d}E{episode:02d} {fansub}"
+    assert cfg.rename_enable is True
+    assert cfg.rename_remap_cfg_path == "remap.yaml"
+
+    assert cfg.bot_assistant_enable is False
+
+    assert cfg.dev_log_level == "INFO"
 
 
-def test_load_config(config_file, sample_config):
-    loader = ConfigLoader(str(config_file))
-    assert loader.config == sample_config
-
-
-def test_get_existing_key(config_file):
-    loader = ConfigLoader(str(config_file))
-    assert loader.get("common.interval_time") == 300
-    assert loader.get("alist.base_url") == "https://www.example.com"
-    assert loader.get("mikan.subscribe_url") == [
-        "https://mikanani.me/RSS/MyBangumi?token=xxx",
-        "https://mikanani.me/RSS/rss2",
-    ]
-
-
-def test_get_nested_key(config_file):
-    loader = ConfigLoader(str(config_file))
-    assert loader.get("common.proxies.http") == "https://127.0.0.1:7890"
-
-
-def test_get_non_existent_key_with_default(config_file):
-    loader = ConfigLoader(str(config_file))
-    assert loader.get("non_existent_key", default="default_value") == "default_value"
-
-
-def test_get_non_existent_key_without_default(config_file):
-    loader = ConfigLoader(str(config_file))
-    with pytest.raises(KeyError):
-        loader.get("non_existent_key")
-
-
-def test_get_partial_non_existent_key(config_file):
-    loader = ConfigLoader(str(config_file))
-    with pytest.raises(KeyError):
-        loader.get("common.non_existent_key")
+def test_load_config_with_error():
+    config_path = "tests/common/test_config_invalid.yaml"
+    with pytest.raises(KeyError) as excinfo:
+        ConfigManager(config_path)
+    assert "alist.token is not found in config file" in str(excinfo.value)

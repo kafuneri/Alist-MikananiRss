@@ -1,15 +1,16 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from tenacity import RetryError, wait_none
+
 from alist_mikananirss.alist import Alist
 from alist_mikananirss.alist.tasks import (
     AlistDownloadTask,
-    AlistTaskCollection,
+    AlistTaskList,
     AlistTaskStatus,
     AlistTaskType,
 )
 from alist_mikananirss.core.download_manager import TaskMonitor
-from tenacity import wait_none
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ async def test_refresh_success(task_monitor, mock_alist, mock_task):
     updated_task = MagicMock(
         spec=AlistDownloadTask, tid="123", status=AlistTaskStatus.Running, progress=0.5
     )
-    mock_alist.get_task_list.return_value = AlistTaskCollection([updated_task])
+    mock_alist.get_task_list.return_value = AlistTaskList([updated_task])
 
     await task_monitor._refresh()
 
@@ -44,9 +45,9 @@ async def test_refresh_success(task_monitor, mock_alist, mock_task):
 
 @pytest.mark.asyncio
 async def test_refresh_task_not_found(task_monitor, mock_alist):
-    mock_alist.get_task_list.return_value = AlistTaskCollection([])
+    mock_alist.get_task_list.return_value = AlistTaskList()
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RetryError):
         task_monitor._refresh.retry.wait = wait_none()
         await task_monitor._refresh()
 
@@ -123,7 +124,7 @@ async def test_wait_finished_stalled(task_monitor):
 
 @pytest.mark.parametrize("task_type", [AlistTaskType.DOWNLOAD, AlistTaskType.TRANSFER])
 def test_normal_status(task_type):
-    assert set(TaskMonitor.NORMAL_STATUSES) == {
+    assert set(TaskMonitor.NORMAL_STATUS) == {
         AlistTaskStatus.Pending,
         AlistTaskStatus.Running,
         AlistTaskStatus.StateBeforeRetry,

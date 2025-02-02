@@ -7,18 +7,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from tenacity import wait_none
 
-from alist_mikananirss.alist import Alist
-from alist_mikananirss.alist.api import AlistClientError
-from alist_mikananirss.alist.tasks import (
+from alist_mikananirss import AnimeDownloadTaskInfo, DownloadManager, SubscribeDatabase
+from alist_mikananirss.alist import (
+    Alist,
+    AlistClientError,
     AlistDownloadTask,
     AlistTaskList,
     AlistTaskStatus,
     AlistTransferTask,
 )
-from alist_mikananirss.common.database import SubscribeDatabase
-from alist_mikananirss.core import DownloadManager
-from alist_mikananirss.core.download_manager import AnimeDownloadTaskInfo
-from alist_mikananirss.websites import ResourceInfo
+from alist_mikananirss.websites.models import LanguageType, ResourceInfo
 
 
 @pytest.fixture
@@ -58,10 +56,18 @@ def get_incomplete_transfer_task(resource):
         secrets.choice(string.digits + string.ascii_lowercase) for _ in range(36)
     )
     download_path = test_instance._build_download_path(resource).replace(os.sep, "/")
+
+    cleaned_path = download_path.strip("/")
+    parts = cleaned_path.split("/", 1)
+    tgt_drive = "/" + parts[0]
+    drive_subdir = ""
+    if len(parts) > 1:
+        drive_subdir = "/" + parts[1]
+
     json_data = {
         "error": "",
         "id": tid,
-        "name": f"transfer /path/to/alist/data/temp/qBittorrent/{uuid}/subfolder/{resource.anime_name}/filename.mp4 to [{download_path}]",
+        "name": f"transfer [](/path/to/alist/data/temp/qBittorrent/{uuid}/subfolder/{resource.anime_name}/filename.mp4) to [{tgt_drive}]({drive_subdir})",
         "progress": 50.0,
         "state": 1,
         "status": "running",
@@ -100,7 +106,7 @@ def test_resources():
             episode=5,
             fansub="TestSub",
             quality="1080p",
-            language="JP",
+            languages=[LanguageType.SIMPLIFIED_CHINESE],
         ),
     ]
     return resources
